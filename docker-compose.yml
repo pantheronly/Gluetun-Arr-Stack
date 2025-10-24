@@ -1,0 +1,120 @@
+version: "3" # Made by Parv
+services: # If you are not that experienced with docker you probably wont be able to figure out which path to add where and the configurations necessary after installation. To get a better idea follow this youtube video: https://www.youtube.com/watch?v=3k_MwE0Z3CE
+  prowlarr: # This script's sole purpose is to make routing the arr stack through a vpn easier in countries with TMDB or torrenting blocked or monitered.
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    environment:
+      - PUID=1001 # Change your puid and pgid values for your system
+      - PGID=100
+      - TZ=Asia/Kolkata # Change you this timezone according to your timezone. You can find your relative timezone here: https://support.atlassian.com/atlassian-knowledge-base/kb/how-to-set-the-timezone-for-docker-container/
+    volumes: # Swap the "/path/to/folder" for the folder path in your respected drive
+      -/path/to/folder/prowlarr/config:/config 
+      -/path/to/folder/prowlarr/backup:/data/Backup
+      -/path/to/folder/downloads:/data/downloads
+    restart: unless-stopped
+    network_mode: "service:gluetun" 
+  radarr:
+      image: lscr.io/linuxserver/radarr:latest
+      container_name: radarr
+      environment:
+        - PUID=1001
+        - PGID=100
+        - TZ=Asia/Kolkata
+      volumes:
+        -/path/to/folder/radarr/config:/config
+        - /path/to/folder/movies:/data/movies
+        -/path/to/folder/downloads:/data/downloads
+        -/path/to/folder/radarr/backup:/data/Backup
+      restart: unless-stopped
+      network_mode: "service:gluetun"
+  sonarr:
+      image: lscr.io/linuxserver/sonarr:latest 
+      container_name: sonarr
+      environment:
+        - PUID=1001
+        - PGID=100
+        - TZ=Asia/Kolkata
+      volumes:
+        -/path/to/folder/sonarr/config:/config
+        -/path/to/folder/sonarr/backup:/data/Backup
+        -/path/to/folder/tvshows:/data/tvshows
+        -/path/to/folder/downloads:/data/downloads
+      restart: unless-stopped
+      network_mode: "service:gluetun"
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    environment:
+      - PUID=1001
+      - PGID=100
+      - TZ=Asia/Kolkata
+      - WEBUI_PORT=8080
+      - TORRENTING_PORT=6881
+    volumes:
+      -/path/to/folder/qbit/config:/config
+      -/path/to/folder/downloads:/downloads #optional
+    network_mode: "service:gluetun"
+    restart: unless-stopped
+  flaresolverr:
+    # DockerHub mirror flaresolverr/flaresolverr:latest
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOG_HTML=${LOG_HTML:-false}
+      - CAPTCHA_SOLVER=${CAPTCHA_SOLVER:-none}
+      - TZ=Asia/Kolkata
+    network_mode: "service:gluetun"
+    restart: unless-stopped
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    environment:
+      - PUID=1001
+      - PGID=100
+      - TZ=Asia/Kolkata
+      - JELLYFIN_PublishedServerUrl=http://192.168.0.5 #optional
+    volumes:
+      -/path/to/folder/jellyfin/config:/config
+      - /path/to/folder/tvshows:/data/tvshows
+      - /path/to/folder/movies:/data/movies
+    network_mode: "service:gluetun"
+    devices:
+      - /dev/dri:/dev/dri
+    restart: unless-stopped 
+  jellyseerr:
+    image: fallenbagel/jellyseerr:latest
+    container_name: jellyseerr
+    environment:
+      - LOG_LEVEL=debug
+      - TZ=Asia/Kolkata
+    volumes:
+      -/path/to/folder/jellyseer/config:/app/config
+    network_mode: "service:gluetun"
+    restart: unless-stopped  
+  gluetun:
+    image: qmcgaw/gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - VPN_SERVICE_PROVIDER=surfshark # Change your provider according to your vpn provider. Use this wiki to set this value and the following values: https://github.com/qdm12/gluetun-wiki
+      - VPN_TYPE=wireguard
+      - WIREGUARD_PRIVATE_KEY=XXXX # Enter your private key here
+      - WIREGUARD_ADDRESSES=XXXX # Figure the following values out for your vpn using the aforementioned guide
+      - SERVER_COUNTRIES=XXXX 
+      - FIREWALL_OUTBOUND_SUBNETS=XXXX
+    ports:
+      - 8989:8989 #sonarr
+      - 7878:7878 #radarr
+      - 9696:9696 #prowlarr
+      - 8080:8080 #qbit
+      - 6881:6881 #qbit
+      - 6881:6881/udp #qbit
+      - 8191:8191 #flaresolver
+      - 8096:8096 #jellyfin
+      - 8920:8920 #optional jellyfin
+      - 7359:7359/udp #optional jellyfin
+      - 1900:1900/udp #optional jellyfin
+      - 5055:5055 #jellyseerr
