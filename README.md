@@ -36,11 +36,18 @@ This specific configuration is tailored to overcome common hurdles encountered b
     * A critical configuration is included to ensure **Jellyseerr** can communicate with the **Jellyfin** container, even though Jellyfin is connected to the isolated VPN network managed by Gluetun. This ensures a seamless user experience for media requests.
 
 4.  **Quick and Easy Deployment:**
-    * Most of the compose file is written so a person starting out his or her journey just has to replace the **placeholders** and configure the containers to achieve a self-hosted multimedia server.
+    * Most of the compose file is written so a person starting out his or her journey just has to complete the **env_variables.env** file and configure the containers to achieve a self-hosted multimedia server.
 
 ---
 
 ## ⚠️ Prerequisites & Setup Instructions
+
+Before you begin, you must configure **two essential files**. This is a critical step and the stack **will not work** without it.
+
+1.  **`env_variables.env` file:** This file holds all your personal settings, like folder paths (`CONFIG_BASE_PATH`, `DOWNLOADS_PATH`, etc.) and your user/group IDs (`PUID`/`PGID`). You must edit this file and fill in all the required values.
+2.  **`docker-compose.yml` file:** You must edit this file to enter your **VPN provider credentials** (like your private key or username/password) in the `gluetun` service section.
+
+Pay close attention to the **comments** in both files (`# A comment looks like this`). They contain instructions, examples, and links to official guides (like the Gluetun wiki) that you will need to complete the setup.
 
 ### 1. VPN Requirement
 
@@ -51,13 +58,17 @@ This specific configuration is tailored to overcome common hurdles encountered b
 * Refer to the official **Gluetun Wiki** (linked in the `docker-compose.yml` file) to find the specific environment variables and settings required for your chosen VPN provider.
 * **Cyber Law Advisory:** It is highly recommended to **choose a VPN server located in a country with liberal cyber laws** to maximize your privacy and safety.
 
-### 3. Post-Installation Configuration Guidance
+## ⚠️ IMPORTANT: Post-Setup Configuration
 
-If you are not experienced with Docker, configuring the required volume paths and necessary container connections after initial deployment can be complex.
+After all containers are running, you **must** configure Sonarr and Radarr to work with qBittorrent. Because they see the download folder differently, you must set up a **Remote Path Map**.
 
-For a detailed, step-by-step guide on:
-* Which **folder paths** to insert into the placeholders.
-* The necessary **post-installation configurations** within each container (e.g., setting up indexers in Prowlarr, connecting Sonarr/Radarr, and setting up remote path mappings).
+In **Sonarr/Radarr**, go to `Settings` > `Download Clients` > `qBittorrent`.
 
-Please follow this helpful resource:
-**[YouTube Guide](https://www.youtube.com/watch?v=3k_MwE0Z3CE)**
+Scroll down and add a **Remote Path Mapping**:
+* **Host:** `qbittorrent`
+* **Remote Path:** `/downloads`
+* **Local Path:** `/data/downloads`
+
+> This tells Sonarr/Radarr: "When qBittorrent says a file is in `/downloads`, look for it in `/data/downloads` instead."
+
+If you are doing this for the first time I strongly recommend you follow the following video to setup prowlarr, radarr, sonarr, qbit and jellyfin: **[YouTube Guide](https://www.youtube.com/watch?v=3k_MwE0Z3CE)**
